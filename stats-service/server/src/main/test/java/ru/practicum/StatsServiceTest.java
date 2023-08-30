@@ -41,11 +41,11 @@ public class StatsServiceTest {
     @Spy
     private RequestMapperImpl requestMapper;
 
-    RequestDto requestDto;
+    private RequestDto requestDto;
 
-    RequestOutputDto requestOutputDto;
-    Request request;
-    App app;
+    private RequestOutputDto requestOutputDto;
+    private Request request;
+    private App app;
 
     @BeforeEach
     void setup() {
