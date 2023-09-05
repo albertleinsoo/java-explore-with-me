@@ -29,7 +29,7 @@ public class StatsController {
     @PostMapping("/hit")
     @ResponseStatus(code = HttpStatus.CREATED)
     public void addRequest(@Valid @RequestBody RequestDto requestDto) {
-        log.info("Добавление запроса в статистику: " + requestDto.toString());
+        log.info("Calling POST: /hit with 'RequestDto': {}", requestDto.toString());
         statsService.addRequest(requestDto);
     }
 
@@ -39,17 +39,44 @@ public class StatsController {
                                                            @RequestParam(required = false) List<String> uris,
                                                            @RequestParam(defaultValue = "false") Boolean unique) {
 
+        log.info("Calling GET: /stats with 'start': {}, 'end': {}, uris: {}, unique: {}", start, end, uris, unique);
+
         LocalDateTime startDT;
         LocalDateTime endDT;
         try {
             startDT = LocalDateTime.parse(start, DTF);
             endDT = LocalDateTime.parse(end, DTF);
         } catch (DateTimeParseException e) {
-            log.error("Ошибка формата даты. Ожидается yyyy-MM-dd HH:mm:ss");
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (startDT.isAfter(endDT)) {
             return ResponseEntity.badRequest().build();
         }
 
         List<RequestOutputDto> results = statsService.getRequestsWithViews(startDT, endDT, uris, unique);
+        return ResponseEntity.ok().body(results);
+    }
+
+    @GetMapping("/statsByIp")
+    public ResponseEntity<List<RequestOutputDto>> statsByIp(@RequestParam String start,
+                                                            @RequestParam String end,
+                                                            @RequestParam(required = false) List<String> uris,
+                                                            @RequestParam(defaultValue = "false") Boolean unique,
+                                                            @RequestParam String ip) {
+
+        log.info("Calling GET: /stats with 'start': {}, 'end': {}, uris: {}, unique: {}", start, end, uris, unique);
+
+        LocalDateTime startDT;
+        LocalDateTime endDT;
+        try {
+            startDT = LocalDateTime.parse(start, DTF);
+            endDT = LocalDateTime.parse(end, DTF);
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<RequestOutputDto> results = statsService.getRequestsWithViewsByIp(startDT, endDT, uris, unique, ip);
         return ResponseEntity.ok().body(results);
     }
 }

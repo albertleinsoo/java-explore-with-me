@@ -3,8 +3,8 @@ package ru.practicum.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.RequestDto;
-import ru.practicum.RequestOutputDto;
 import ru.practicum.mapper.RequestMapper;
+import ru.practicum.RequestOutputDto;
 import ru.practicum.model.App;
 import ru.practicum.model.Request;
 import ru.practicum.repository.AppRepository;
@@ -44,6 +44,22 @@ public class StatsServiceImpl implements StatsService {
                 return requestRepository.getAllRequestsWithoutUri(start, end);
             }
             return requestRepository.getAllRequestsWithUri(start, end, uris);
+        }
+    }
+
+    @Override
+    public List<RequestOutputDto> getRequestsWithViewsByIp(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique, String ip) {
+
+        if (unique) {
+            if (uris == null || uris.isEmpty()) {
+                return requestRepository.getUniqueIpRequestsWithoutUriByIp(start, end, ip);
+            }
+            return requestRepository.getUniqueIpRequestsWithUriByIp(start, end, uris, ip);
+        } else {
+            if (uris == null || uris.isEmpty()) {
+                return requestRepository.getAllRequestsWithoutUriByIp(start, end, ip);
+            }
+            return requestRepository.getAllRequestsWithUriByIp(start, end, uris, ip);
         }
     }
 }
