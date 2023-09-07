@@ -17,7 +17,7 @@ import ru.practicum.exception.ObjectNotFoundException;
 import ru.practicum.exception.RequestConflictException;
 import ru.practicum.exception.SQLConstraintViolationException;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,6 +95,6 @@ public class CategoryServiceImpl implements CategoryService {
                 .map(categoryMapper::categoryToCategoryDto)
                 .collect(Collectors.toList());
 
-        return (!categories.isEmpty()) ? categories : new ArrayList<>();
+        return (!categories.isEmpty()) ? categories : Collections.emptyList();
     }
 }
