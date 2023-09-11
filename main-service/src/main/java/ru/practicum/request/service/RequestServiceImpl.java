@@ -115,13 +115,9 @@ public class RequestServiceImpl implements RequestService {
     public List<ParticipationRequestDto> getUserEventRequests(Long userId, Long eventId) {
         List<ParticipationRequest> requests = requestRepository.findAllByEventIdAndEventInitiatorId(eventId, userId);
 
-        if (!requests.isEmpty()) {
-            return requests.stream()
+        return requests.stream()
                     .map(requestMapper::requestToDto)
                     .collect(Collectors.toList());
-        } else {
-            return new ArrayList<>();
-        }
     }
 
     @Override
