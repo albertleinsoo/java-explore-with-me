@@ -40,13 +40,13 @@ public class EventController {
                         " 'rangeEnd': {}, 'onlyAvailable': {}, 'sort': {}, 'from': {}, 'size': {}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
 
-        return eventService.getAll(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, from, size, sort, request);
+        return eventService.getAll(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, from, size, sort, request.getRemoteAddr(), request.getRequestURI());
     }
 
     @GetMapping("/{id}")
     public EventFullDto getById(@PathVariable Long id, HttpServletRequest request) {
 
         log.info("Calling GET: /events/{id} with 'id': {}",  id);
-        return eventService.get(id, request);
+        return eventService.get(id, request.getRemoteAddr(), request.getRequestURI());
     }
 }

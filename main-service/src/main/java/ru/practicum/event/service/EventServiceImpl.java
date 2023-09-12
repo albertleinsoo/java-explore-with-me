@@ -28,7 +28,6 @@ import ru.practicum.exception.RequestConflictException;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -112,7 +111,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<EventShortDto> getAll(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
                                       LocalDateTime rangeEnd, Boolean onlyAvailable, Integer from, Integer size,
-                                      EventSort sort, HttpServletRequest request) {
+                                      EventSort sort, String requestAddress, String requestUri) {
 
         if ((rangeStart != null && rangeEnd != null) && (rangeStart.isAfter(rangeEnd) || rangeStart.isEqual(rangeEnd))) {
             throw new IncorrectRequestException("Start time must not after or equal to end time.");
@@ -129,7 +128,7 @@ public class EventServiceImpl implements EventService {
                 .and(hasRangeEnd(rangeEnd))
                 .and(hasAvailable(onlyAvailable)), pageable);
 
-        updateViews(eventsPage.toList(), request);
+        updateViews(eventsPage.toList(), requestAddress, requestUri);
 
         return eventsPage.stream()
                 .filter(event -> event.getPublishedOn() != null)
@@ -138,12 +137,12 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventFullDto get(Long eventId, HttpServletRequest request) {
+    public EventFullDto get(Long eventId, String requestAddress, String requestUri) {
         Event event = eventRepository.findByIdAndStateIs(eventId, EventState.PUBLISHED).orElseThrow(() -> {
             throw new ObjectNotFoundException("Event with id = " + eventId + " was not found.");
         });
 
-        updateViews(Collections.singletonList(event), request);
+        updateViews(Collections.singletonList(event), requestAddress, requestUri);
 
         return eventMapper.eventToEventFullDto(event);
     }
@@ -207,10 +206,10 @@ public class EventServiceImpl implements EventService {
         return eventMapper.eventToEventFullDto(event);
     }
 
-    private void updateViews(List<Event> events, HttpServletRequest request) {
+    private void updateViews(List<Event> events, String requestAddress, String requestUri) {
         RequestDto requestDto = new RequestDto();
-        requestDto.setIp(request.getRemoteAddr());
-        requestDto.setUri(request.getRequestURI());
+        requestDto.setIp(requestAddress);
+        requestDto.setUri(requestUri);
         requestDto.setTimestamp(LocalDateTime.now());
         requestDto.setApp("main-service");
 
@@ -218,7 +217,7 @@ public class EventServiceImpl implements EventService {
                 LocalDateTime.now().format(DTF),
                 Collections.singletonList(requestDto.getUri()),
                 true,
-                request.getRemoteAddr());
+                requestAddress);
 
         statsClient.addRequest(requestDto);
 

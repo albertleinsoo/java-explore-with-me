@@ -7,7 +7,6 @@ import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.model.enums.EventSort;
 import ru.practicum.event.model.enums.EventState;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,11 +16,15 @@ public interface EventService {
 
     EventFullDto updateAdminEvent(Long eventId, EventUpdateDto eventUpdateDto);
 
+/*    List<EventShortDto> getAll(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
+                               LocalDateTime rangeEnd, Boolean onlyAvailable, Integer from, Integer size,
+                               EventSort sort, HttpServletRequest request);*/
+
     List<EventShortDto> getAll(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
                                LocalDateTime rangeEnd, Boolean onlyAvailable, Integer from, Integer size,
-                               EventSort sort, HttpServletRequest request);
+                               EventSort sort, String requestAddress, String requestUri);
 
-    EventFullDto get(Long id, HttpServletRequest request);
+    EventFullDto get(Long id, String requestAddress, String requestUri);
 
     List<EventShortDto> getUserEvents(Long userId, Integer from, Integer size);
 
