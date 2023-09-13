@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -139,21 +140,27 @@ public class RequestServiceImpl implements RequestService {
             }
         }
 
-        List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
-        List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
+        List<ParticipationRequest> confirmedRequests = new ArrayList<>();
+        List<ParticipationRequest> rejectedRequests = new ArrayList<>();
 
         if (requestsUpdate.getStatus() == EventStatus.REJECTED) {
             participationRequests.forEach(participationRequest -> {
                 participationRequest.setStatus(ParticipationStatus.REJECTED);
-                requestRepository.save(participationRequest);
-                rejectedRequests.add(requestMapper.requestToDto(participationRequest));
+                rejectedRequests.add(participationRequest);
             });
-            return new EventRequestStatusUpdateResult(confirmedRequests, rejectedRequests);
+            requestRepository.saveAll(rejectedRequests);
+            return new EventRequestStatusUpdateResult(
+                    confirmedRequests.stream()
+                            .map(requestMapper::requestToDto).collect(Collectors.toList()),
+                    rejectedRequests.stream()
+                            .map(requestMapper::requestToDto).collect(Collectors.toList()));
         }
 
         if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
             return new EventRequestStatusUpdateResult(
-                    participationRequests.stream().map(requestMapper::requestToDto).collect(Collectors.toList()),
+                    participationRequests.stream()
+                            .peek(rq -> rq.setStatus(ParticipationStatus.CONFIRMED))
+                            .map(requestMapper::requestToDto).collect(Collectors.toList()),
                     new ArrayList<>()
             );
         }
@@ -165,20 +172,24 @@ public class RequestServiceImpl implements RequestService {
         participationRequests.forEach(participationRequest -> {
             if (event.getConfirmedRequests() < event.getParticipantLimit()) {
                 participationRequest.setStatus(ParticipationStatus.CONFIRMED);
-                requestRepository.save(participationRequest);
                 event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-                confirmedRequests.add(requestMapper.requestToDto(participationRequest));
+                confirmedRequests.add(participationRequest);
             } else {
                 participationRequest.setStatus(ParticipationStatus.REJECTED);
-                requestRepository.save(participationRequest);
-                rejectedRequests.add(requestMapper.requestToDto(participationRequest));
+                rejectedRequests.add(participationRequest);
             }
         });
+
+        requestRepository.saveAll(Stream.concat(confirmedRequests.stream(),rejectedRequests.stream()).collect(Collectors.toList()));
 
         if (!confirmedRequests.isEmpty()) {
             eventRepository.save(event);
         }
 
-        return new EventRequestStatusUpdateResult(confirmedRequests, rejectedRequests);
+        return new EventRequestStatusUpdateResult(
+                confirmedRequests.stream()
+                        .map(requestMapper::requestToDto).collect(Collectors.toList()),
+                rejectedRequests.stream()
+                        .map(requestMapper::requestToDto).collect(Collectors.toList()));
     }
 }

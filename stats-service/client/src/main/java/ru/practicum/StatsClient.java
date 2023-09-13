@@ -1,14 +1,18 @@
 package ru.practicum;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
+@Service
 public class StatsClient {
     private final WebClient webClient;
 
+    @Autowired
     public StatsClient(@Value("${stats.server.url}") String statsServerUrl) {
         webClient = WebClient.create(statsServerUrl);
     }

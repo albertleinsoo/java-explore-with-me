@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.user.dto.UserShortDto;
 
-import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class EventShortDto {
 
-    @Size(min = 20, max = 2000)
     private String annotation;
 
     private Long id;
@@ -31,7 +29,6 @@ public class EventShortDto {
 
     private Boolean paid;
 
-    @Size(min = 3, max = 120)
     private String title;
 
     private Long views;

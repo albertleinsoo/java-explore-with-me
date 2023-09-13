@@ -16,10 +16,6 @@ public interface EventService {
 
     EventFullDto updateAdminEvent(Long eventId, EventUpdateDto eventUpdateDto);
 
-/*    List<EventShortDto> getAll(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
-                               LocalDateTime rangeEnd, Boolean onlyAvailable, Integer from, Integer size,
-                               EventSort sort, HttpServletRequest request);*/
-
     List<EventShortDto> getAll(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
                                LocalDateTime rangeEnd, Boolean onlyAvailable, Integer from, Integer size,
                                EventSort sort, String requestAddress, String requestUri);
