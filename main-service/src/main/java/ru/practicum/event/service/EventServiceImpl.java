@@ -127,6 +127,8 @@ public class EventServiceImpl implements EventService {
                 .and(hasRangeEnd(rangeEnd))
                 .and(hasAvailable(onlyAvailable)), pageable);
 
+        updateViews(requestAddress, requestUri);
+
         return eventsPage.stream()
                 .filter(event -> event.getPublishedOn() != null)
                 .map(eventMapper::eventToShortDto)
