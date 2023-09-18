@@ -57,7 +57,8 @@ public class RequestServiceImpl implements RequestService {
             throw new RequestConflictException("Event organizers are not allowed to request participation in their own events.");
         }
 
-        if ((event.getParticipantLimit() != 0L) && ((long) requestRepository.countByEventIdAndEventInitiatorIdAndStatus(eventId, userId, ParticipationStatus.CONFIRMED) >= event.getParticipantLimit())) {
+        if ((event.getParticipantLimit() != 0L)
+                && (requestRepository.countByEventIdAndEventInitiatorIdAndStatus(eventId, userId, ParticipationStatus.CONFIRMED) + 1 >= event.getParticipantLimit())) {
             throw new RequestConflictException("Participant limit reached.");
         }
 
