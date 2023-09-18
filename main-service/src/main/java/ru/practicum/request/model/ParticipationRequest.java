@@ -2,10 +2,10 @@ package ru.practicum.request.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
-import javax.persistence.*;
 import ru.practicum.event.model.Event;
 import ru.practicum.user.model.User;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity

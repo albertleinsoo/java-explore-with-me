@@ -25,6 +25,8 @@ import ru.practicum.event.repository.EventSpecRepository;
 import ru.practicum.exception.IncorrectRequestException;
 import ru.practicum.exception.ObjectNotFoundException;
 import ru.practicum.exception.RequestConflictException;
+import ru.practicum.request.model.ParticipationStatus;
+import ru.practicum.request.repository.RequestRepository;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
@@ -45,6 +47,7 @@ public class EventServiceImpl implements EventService {
     private final EventSpecRepository eventSpecRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final RequestRepository requestRepository;
     private final EventMapper eventMapper;
     private final StatsClient statsClient;
 
@@ -69,10 +72,12 @@ public class EventServiceImpl implements EventService {
 
             return events.stream()
                     .map(eventMapper::eventToEventFullDto)
+                    .peek(event -> event.setConfirmedRequests(requestRepository.countByEventIdAndEventInitiatorIdAndStatus(event.getId(), event.getInitiator().getId(), ParticipationStatus.CONFIRMED)))
                     .collect(Collectors.toList());
         } else {
             return eventRepository.findAll(pageable).stream()
                     .map(eventMapper::eventToEventFullDto)
+                    .peek(event -> event.setConfirmedRequests(requestRepository.countByEventIdAndEventInitiatorIdAndStatus(event.getId(), event.getInitiator().getId(), ParticipationStatus.CONFIRMED)))
                     .collect(Collectors.toList());
         }
     }

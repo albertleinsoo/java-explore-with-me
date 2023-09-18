@@ -2,12 +2,12 @@ package ru.practicum.event.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
-import javax.persistence.*;
 import ru.practicum.category.model.Category;
 import ru.practicum.compilation.model.Compilation;
 import ru.practicum.event.model.enums.EventState;
 import ru.practicum.user.model.User;
 
+import javax.persistence.*;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,9 +32,6 @@ public class Event {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "cat_id")
     private Category category;
-
-    @Column(name = "confirmed_requests")
-    private Long confirmedRequests = 0L;
 
     @Column(name = "created_on")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")

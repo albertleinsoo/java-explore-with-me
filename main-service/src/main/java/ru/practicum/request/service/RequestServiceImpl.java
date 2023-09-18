@@ -57,7 +57,7 @@ public class RequestServiceImpl implements RequestService {
             throw new RequestConflictException("Event organizers are not allowed to request participation in their own events.");
         }
 
-        if ((event.getParticipantLimit() != 0L) && (event.getConfirmedRequests() >= event.getParticipantLimit())) {
+        if ((event.getParticipantLimit() != 0L) && ((long) requestRepository.countByEventIdAndEventInitiatorIdAndStatus(eventId, userId, ParticipationStatus.CONFIRMED) >= event.getParticipantLimit())) {
             throw new RequestConflictException("Participant limit reached.");
         }
 
@@ -66,11 +66,6 @@ public class RequestServiceImpl implements RequestService {
                         ParticipationStatus.CONFIRMED : ParticipationStatus.PENDING, LocalDateTime.now());
 
         ParticipationRequest participationRequest = requestRepository.save(requestToSave);
-
-        if (participationRequest.getStatus() == ParticipationStatus.CONFIRMED) {
-            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-            eventRepository.save(event);
-        }
 
         return requestMapper.requestToDto(participationRequest);
     }
@@ -92,7 +87,6 @@ public class RequestServiceImpl implements RequestService {
             throw new ObjectNotFoundException("Event with id = " + eventId + " doesn't exist.");
         });
 
-        event.setConfirmedRequests(event.getConfirmedRequests() - 1);
         eventRepository.save(event);
 
         request = requestRepository.save(request);
@@ -165,14 +159,13 @@ public class RequestServiceImpl implements RequestService {
             );
         }
 
-        if (event.getConfirmedRequests() >= event.getParticipantLimit()) {
+        if (requestRepository.countByEventIdAndEventInitiatorIdAndStatus(eventId, userId, ParticipationStatus.CONFIRMED) >= event.getParticipantLimit()) {
             throw new RequestConflictException("Failed to accept request. Reached max participant limit for event id = " + eventId + ".");
         }
 
         participationRequests.forEach(participationRequest -> {
-            if (event.getConfirmedRequests() < event.getParticipantLimit()) {
+            if (requestRepository.countByEventIdAndEventInitiatorIdAndStatus(eventId, userId, ParticipationStatus.CONFIRMED) < event.getParticipantLimit()) {
                 participationRequest.setStatus(ParticipationStatus.CONFIRMED);
-                event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                 confirmedRequests.add(participationRequest);
             } else {
                 participationRequest.setStatus(ParticipationStatus.REJECTED);

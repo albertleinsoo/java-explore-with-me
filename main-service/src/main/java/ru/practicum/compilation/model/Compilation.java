@@ -1,9 +1,9 @@
 package ru.practicum.compilation.model;
 
 import lombok.*;
-import javax.persistence.*;
 import ru.practicum.event.model.Event;
 
+import javax.persistence.*;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
