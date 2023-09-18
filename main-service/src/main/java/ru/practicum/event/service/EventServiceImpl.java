@@ -32,7 +32,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.springframework.data.jpa.domain.Specification.where;
@@ -128,8 +127,6 @@ public class EventServiceImpl implements EventService {
                 .and(hasRangeEnd(rangeEnd))
                 .and(hasAvailable(onlyAvailable)), pageable);
 
-        updateViews(eventsPage.toList(), requestAddress, requestUri);
-
         return eventsPage.stream()
                 .filter(event -> event.getPublishedOn() != null)
                 .map(eventMapper::eventToShortDto)
@@ -142,9 +139,22 @@ public class EventServiceImpl implements EventService {
             throw new ObjectNotFoundException("Event with id = " + eventId + " was not found.");
         });
 
-        updateViews(Collections.singletonList(event), requestAddress, requestUri);
+        RequestDto requestDto = updateViews(requestAddress, requestUri);
 
-        return eventMapper.eventToEventFullDto(event);
+        EventFullDto eventFullDto = eventMapper.eventToEventFullDto(event);
+
+        ResponseEntity<List<RequestOutputDto>> listResponseEntity = statsClient.getStatsByIp(LocalDateTime.now().minusHours(1).format(DTF),
+                LocalDateTime.now().format(DTF),
+                Collections.singletonList(requestDto.getUri()),
+                true,
+                requestAddress);
+
+        if (listResponseEntity.getBody() != null) {
+            eventFullDto.setViews((long) listResponseEntity.getBody().size());
+        } else {
+            eventFullDto.setViews(0L);
+        }
+        return eventFullDto;
     }
 
     @Override
@@ -171,8 +181,6 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId).orElseThrow(() -> {
             throw new ObjectNotFoundException("Event with id = " + eventId + " and user id = " + userId + " is not found.");
         });
-
-        event.setViews(event.getViews() + 1);
 
         event = eventRepository.save(event);
         return eventMapper.eventToEventFullDto(event);
@@ -206,28 +214,16 @@ public class EventServiceImpl implements EventService {
         return eventMapper.eventToEventFullDto(event);
     }
 
-    private void updateViews(List<Event> events, String requestAddress, String requestUri) {
+    private RequestDto updateViews(String requestAddress, String requestUri) {
         RequestDto requestDto = new RequestDto();
         requestDto.setIp(requestAddress);
         requestDto.setUri(requestUri);
         requestDto.setTimestamp(LocalDateTime.now());
         requestDto.setApp("main-service");
 
-        ResponseEntity<List<RequestOutputDto>> listResponseEntity = statsClient.getStatsByIp(LocalDateTime.now().minusHours(1).format(DTF),
-                LocalDateTime.now().format(DTF),
-                Collections.singletonList(requestDto.getUri()),
-                true,
-                requestAddress);
-
         statsClient.addRequest(requestDto);
 
-        if (Optional.ofNullable(listResponseEntity.getBody())
-                        .map(List::isEmpty).orElse(false)) {
-            events.forEach(event -> {
-                event.setViews(event.getViews() + 1);
-            });
-            eventRepository.saveAll(events);
-        }
+        return requestDto;
     }
 
     private void updateEvent(Event event, Long userId, NewEventDto eventDto) {

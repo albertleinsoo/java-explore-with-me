@@ -73,8 +73,6 @@ public class Event {
     @Size(min = 3, max = 120)
     private String title;
 
-    private Long views = 0L;
-
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
             name = "comp_events",
