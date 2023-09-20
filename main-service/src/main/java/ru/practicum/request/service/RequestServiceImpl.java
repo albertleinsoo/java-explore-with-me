@@ -160,19 +160,22 @@ public class RequestServiceImpl implements RequestService {
             );
         }
 
-        if (requestRepository.countByEventIdAndEventInitiatorIdAndStatus(eventId, userId, ParticipationStatus.CONFIRMED) >= event.getParticipantLimit()) {
+        long confirmedRequestsCount = requestRepository.countByEventIdAndEventInitiatorIdAndStatus(eventId, userId, ParticipationStatus.CONFIRMED);
+
+        if (confirmedRequestsCount >= event.getParticipantLimit()) {
             throw new RequestConflictException("Failed to accept request. Reached max participant limit for event id = " + eventId + ".");
         }
 
-        participationRequests.forEach(participationRequest -> {
-            if (requestRepository.countByEventIdAndEventInitiatorIdAndStatus(eventId, userId, ParticipationStatus.CONFIRMED) < event.getParticipantLimit()) {
+        for (ParticipationRequest participationRequest: participationRequests) {
+            if (confirmedRequestsCount < event.getParticipantLimit()) {
                 participationRequest.setStatus(ParticipationStatus.CONFIRMED);
                 confirmedRequests.add(participationRequest);
+                confirmedRequestsCount += 1;
             } else {
                 participationRequest.setStatus(ParticipationStatus.REJECTED);
                 rejectedRequests.add(participationRequest);
             }
-        });
+        }
 
         requestRepository.saveAll(Stream.concat(confirmedRequests.stream(),rejectedRequests.stream()).collect(Collectors.toList()));
 

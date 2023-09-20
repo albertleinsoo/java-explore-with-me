@@ -25,6 +25,7 @@ import ru.practicum.event.repository.EventSpecRepository;
 import ru.practicum.exception.IncorrectRequestException;
 import ru.practicum.exception.ObjectNotFoundException;
 import ru.practicum.exception.RequestConflictException;
+import ru.practicum.request.model.ParticipationRequest;
 import ru.practicum.request.model.ParticipationStatus;
 import ru.practicum.request.repository.RequestRepository;
 import ru.practicum.user.model.User;
@@ -33,7 +34,9 @@ import ru.practicum.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.springframework.data.jpa.domain.Specification.where;
@@ -70,14 +73,26 @@ public class EventServiceImpl implements EventService {
                     .and(hasRangeEnd(rangeEnd)),
                     pageable);
 
+            List<ParticipationRequest> confirmedRequests = requestRepository.findAllByStatus(ParticipationStatus.CONFIRMED);
+
+            Map<Long, Long> eventConfirmedRequestsCountMap = makeEventsConfirmedMap(confirmedRequests);
+
             return events.stream()
                     .map(eventMapper::eventToEventFullDto)
-                    .peek(event -> event.setConfirmedRequests(requestRepository.countByEventIdAndEventInitiatorIdAndStatus(event.getId(), event.getInitiator().getId(), ParticipationStatus.CONFIRMED)))
+                    .peek(event -> event.setConfirmedRequests(
+                            eventConfirmedRequestsCountMap.get(event.getId()) != null ? eventConfirmedRequestsCountMap.get(event.getId()) : 0
+                            )
+                    )
                     .collect(Collectors.toList());
         } else {
+            List<ParticipationRequest> confirmedRequests = requestRepository.findAllByStatus(ParticipationStatus.CONFIRMED);
+
+            Map<Long, Long> eventConfirmedRequestsCountMap = makeEventsConfirmedMap(confirmedRequests);
+
             return eventRepository.findAll(pageable).stream()
                     .map(eventMapper::eventToEventFullDto)
-                    .peek(event -> event.setConfirmedRequests(requestRepository.countByEventIdAndEventInitiatorIdAndStatus(event.getId(), event.getInitiator().getId(), ParticipationStatus.CONFIRMED)))
+                    .peek(event -> event.setConfirmedRequests(
+                            eventConfirmedRequestsCountMap.get(event.getId()) != null ? eventConfirmedRequestsCountMap.get(event.getId()) : 0))
                     .collect(Collectors.toList());
         }
     }
@@ -132,7 +147,13 @@ public class EventServiceImpl implements EventService {
                 .and(hasRangeEnd(rangeEnd))
                 .and(hasAvailable(onlyAvailable)), pageable);
 
-        updateViews(requestAddress, requestUri);
+        RequestDto requestDto = new RequestDto();
+        requestDto.setIp(requestAddress);
+        requestDto.setUri(requestUri);
+        requestDto.setTimestamp(LocalDateTime.now());
+        requestDto.setApp("main-service");
+
+        statsClient.addRequest(requestDto);
 
         return eventsPage.stream()
                 .filter(event -> event.getPublishedOn() != null)
@@ -146,7 +167,13 @@ public class EventServiceImpl implements EventService {
             throw new ObjectNotFoundException("Event with id = " + eventId + " was not found.");
         });
 
-        RequestDto requestDto = updateViews(requestAddress, requestUri);
+        RequestDto requestDto = new RequestDto();
+        requestDto.setIp(requestAddress);
+        requestDto.setUri(requestUri);
+        requestDto.setTimestamp(LocalDateTime.now());
+        requestDto.setApp("main-service");
+
+        statsClient.addRequest(requestDto);
 
         EventFullDto eventFullDto = eventMapper.eventToEventFullDto(event);
 
@@ -221,16 +248,19 @@ public class EventServiceImpl implements EventService {
         return eventMapper.eventToEventFullDto(event);
     }
 
-    private RequestDto updateViews(String requestAddress, String requestUri) {
-        RequestDto requestDto = new RequestDto();
-        requestDto.setIp(requestAddress);
-        requestDto.setUri(requestUri);
-        requestDto.setTimestamp(LocalDateTime.now());
-        requestDto.setApp("main-service");
+    private Map<Long, Long> makeEventsConfirmedMap(List<ParticipationRequest> confirmedRequests) {
+        Map<Long, Long> eventConfirmedRequestsCountMap = new HashMap<>();
 
-        statsClient.addRequest(requestDto);
+        for (ParticipationRequest confirmedRequest: confirmedRequests) {
+            if (eventConfirmedRequestsCountMap.containsKey(confirmedRequest.getEvent().getId())) {
+                eventConfirmedRequestsCountMap
+                        .put(confirmedRequest.getEvent().getId(), eventConfirmedRequestsCountMap.get(confirmedRequest.getId()) + 1);
+            } else {
+                eventConfirmedRequestsCountMap.put(confirmedRequest.getEvent().getId(), 1L);
+            }
+        }
 
-        return requestDto;
+        return eventConfirmedRequestsCountMap;
     }
 
     private void updateEvent(Event event, Long userId, NewEventDto eventDto) {
