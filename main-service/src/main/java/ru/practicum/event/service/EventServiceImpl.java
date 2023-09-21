@@ -80,9 +80,7 @@ public class EventServiceImpl implements EventService {
             return events.stream()
                     .map(eventMapper::eventToEventFullDto)
                     .peek(event -> event.setConfirmedRequests(
-                            eventConfirmedRequestsCountMap.get(event.getId()) != null ? eventConfirmedRequestsCountMap.get(event.getId()) : 0
-                            )
-                    )
+                            eventConfirmedRequestsCountMap.getOrDefault(event.getId(), 0L)))
                     .collect(Collectors.toList());
         } else {
             List<ParticipationRequest> confirmedRequests = requestRepository.findAllByStatus(ParticipationStatus.CONFIRMED);
@@ -92,7 +90,7 @@ public class EventServiceImpl implements EventService {
             return eventRepository.findAll(pageable).stream()
                     .map(eventMapper::eventToEventFullDto)
                     .peek(event -> event.setConfirmedRequests(
-                            eventConfirmedRequestsCountMap.get(event.getId()) != null ? eventConfirmedRequestsCountMap.get(event.getId()) : 0))
+                            eventConfirmedRequestsCountMap.getOrDefault(event.getId(), 0L)))
                     .collect(Collectors.toList());
         }
     }
@@ -183,11 +181,8 @@ public class EventServiceImpl implements EventService {
                 true,
                 requestAddress);
 
-        if (listResponseEntity.getBody() != null) {
-            eventFullDto.setViews((long) listResponseEntity.getBody().size());
-        } else {
-            eventFullDto.setViews(0L);
-        }
+        eventFullDto.setViews(listResponseEntity.getBody() != null ? (long) listResponseEntity.getBody().size() : 0L);
+
         return eventFullDto;
     }
 
