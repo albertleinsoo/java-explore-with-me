@@ -153,9 +153,16 @@ public class EventServiceImpl implements EventService {
 
         statsClient.addRequest(requestDto);
 
+        ResponseEntity<List<RequestOutputDto>> listResponseEntity = statsClient.getStatsByIp(LocalDateTime.now().minusHours(1).format(DTF),
+                LocalDateTime.now().format(DTF),
+                Collections.singletonList(requestDto.getUri()),
+                true,
+                requestAddress);
+
         return eventsPage.stream()
                 .filter(event -> event.getPublishedOn() != null)
                 .map(eventMapper::eventToShortDto)
+                .peek(eventShortDto -> eventShortDto.setViews(listResponseEntity.getBody() != null ? (long) listResponseEntity.getBody().size() : 0L))
                 .collect(Collectors.toList());
     }
 
