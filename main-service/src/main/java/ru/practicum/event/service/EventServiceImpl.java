@@ -33,10 +33,7 @@ import ru.practicum.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.springframework.data.jpa.domain.Specification.where;
@@ -153,17 +150,35 @@ public class EventServiceImpl implements EventService {
 
         statsClient.addRequest(requestDto);
 
-        ResponseEntity<List<RequestOutputDto>> listResponseEntity = statsClient.getStatsByIp(LocalDateTime.now().minusHours(1).format(DTF),
-                LocalDateTime.now().format(DTF),
-                Collections.singletonList(requestDto.getUri()),
-                true,
-                requestAddress);
-
-        return eventsPage.stream()
+        List<EventShortDto> eventShortDtos = eventsPage.stream()
                 .filter(event -> event.getPublishedOn() != null)
                 .map(eventMapper::eventToShortDto)
-                .peek(eventShortDto -> eventShortDto.setViews(listResponseEntity.getBody() != null ? (long) listResponseEntity.getBody().size() : 0L))
                 .collect(Collectors.toList());
+
+        List<String> uris = new ArrayList<>();
+        Map<String, EventShortDto> eventsUri = new HashMap<>();
+        String uri;
+
+        RequestDto requestDtoEvent = new RequestDto();
+        requestDtoEvent.setIp(requestAddress);
+        requestDtoEvent.setTimestamp(LocalDateTime.now());
+        requestDtoEvent.setApp("main-service");
+
+        for (EventShortDto event : eventShortDtos) {
+            uri = "/events/" + event.getId();
+            uris.add(uri);
+            eventsUri.put(uri, event);
+            event.setViews(0L);
+            requestDtoEvent.setUri(uri);
+            statsClient.addRequest(requestDtoEvent);
+        }
+
+        ResponseEntity<List<RequestOutputDto>> stats = statsClient.getStats(LocalDateTime.now().minusHours(1).format(DTF),
+                LocalDateTime.now().format(DTF), uris, true);
+
+        Objects.requireNonNull(stats.getBody()).forEach((stat) -> eventsUri.get(stat.getUri()).setViews(stat.getHits()));
+
+        return eventShortDtos;
     }
 
     @Override
