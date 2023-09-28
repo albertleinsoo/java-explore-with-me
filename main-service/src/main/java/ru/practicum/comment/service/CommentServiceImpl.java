@@ -26,6 +26,7 @@ import ru.practicum.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -110,7 +111,7 @@ public class CommentServiceImpl implements CommentService {
                     .collect(Collectors.toList());
         }
 
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     @Override
@@ -123,7 +124,7 @@ public class CommentServiceImpl implements CommentService {
                     .collect(Collectors.toList());
         }
 
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     @Override

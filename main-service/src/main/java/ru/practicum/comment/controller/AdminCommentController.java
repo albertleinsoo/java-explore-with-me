@@ -9,6 +9,7 @@ import ru.practicum.comment.dto.CommentStatusUpdateRequest;
 import ru.practicum.comment.model.CommentStatus;
 import ru.practicum.comment.service.CommentService;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -38,7 +39,7 @@ public class AdminCommentController {
     }
 
     @PatchMapping
-    public List<CommentDto> moderateAdminComments(@RequestBody CommentStatusUpdateRequest updateRequest) {
+    public List<CommentDto> moderateAdminComments(@RequestBody @Valid CommentStatusUpdateRequest updateRequest) {
 
         log.info("Calling PATCH: /admin/comments with 'updateRequest': {}", updateRequest);
         return commentService.moderateAdminComments(updateRequest);
