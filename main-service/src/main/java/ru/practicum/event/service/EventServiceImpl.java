@@ -159,18 +159,11 @@ public class EventServiceImpl implements EventService {
         Map<String, EventShortDto> eventsUri = new HashMap<>();
         String uri;
 
-        RequestDto requestDtoEvent = new RequestDto();
-        requestDtoEvent.setIp(requestAddress);
-        requestDtoEvent.setTimestamp(LocalDateTime.now());
-        requestDtoEvent.setApp("main-service");
-
         for (EventShortDto event : eventShortDtos) {
             uri = "/events/" + event.getId();
             uris.add(uri);
             eventsUri.put(uri, event);
             event.setViews(0L);
-            requestDtoEvent.setUri(uri);
-            statsClient.addRequest(requestDtoEvent);
         }
 
         ResponseEntity<List<RequestOutputDto>> stats = statsClient.getStats(LocalDateTime.now().minusHours(1).format(DTF),
